@@ -1,0 +1,58 @@
+export const MODULES = [
+  {
+    id: "verbs",
+    title: "Verbos",
+    description: "Infinitivo, pasado y participio",
+    emoji: "🏃",
+    ready: true,
+  },
+  {
+    id: "animals",
+    title: "Animales",
+    description: "Mascotas, salvajes, marinos y más",
+    emoji: "🦁",
+    ready: true,
+  },
+  {
+    id: "food",
+    title: "Comidas",
+    description: "Frutas, bebidas y platos diarios",
+    emoji: "🍽️",
+    ready: false,
+  },
+  {
+    id: "family",
+    title: "Familia",
+    description: "Padres, hermanos y parientes",
+    emoji: "👨‍👩‍👧‍👦",
+    ready: false,
+  },
+  {
+    id: "numbers",
+    title: "Números",
+    description: "Conteo, fechas y cantidades",
+    emoji: "🔢",
+    ready: false,
+  },
+  {
+    id: "days",
+    title: "Días de la semana",
+    description: "Lunes a domingo y rutinas",
+    emoji: "📅",
+    ready: false,
+  },
+  {
+    id: "professions",
+    title: "Profesiones",
+    description: "Oficios y trabajos en inglés",
+    emoji: "👩‍⚕️",
+    ready: false,
+  },
+  {
+    id: "places",
+    title: "Lugares",
+    description: "Restaurant, cine, park y ciudad",
+    emoji: "🏙️",
+    ready: false,
+  },
+];
