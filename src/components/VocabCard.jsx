@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { speakEnglish, stopSpeech } from "../utils/speech";
 
 const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -18,12 +18,18 @@ export default function VocabCard({
   inputLabel = "Nombre en inglés",
   placeholder = "Escribe en inglés...",
 }) {
+  const imgRef = useRef(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [answer, setAnswer] = useState(isApproved ? item.english : "");
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    // Si la imagen ya venía precargada en caché, mostrarla de inmediato
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+      setImgLoaded(true);
+    }
     return () => stopSpeech();
   }, []);
 
@@ -54,7 +60,9 @@ export default function VocabCard({
         <div className={`card-face card-front ${isApproved ? "approved" : ""}`}>
           <div className="card-media">
             <div
-              className="image-box"
+              className={`image-box ${
+                !imgLoaded && !imgError ? "is-loading" : ""
+              }`}
               onClick={() => setIsFlipped(true)}
               role="button"
               tabIndex={0}
@@ -63,8 +71,13 @@ export default function VocabCard({
             >
               {!imgError ? (
                 <img
+                  ref={imgRef}
                   src={item.image}
                   alt={item.spanish}
+                  fetchPriority="high"
+                  decoding="async"
+                  className={imgLoaded ? "is-loaded" : ""}
+                  onLoad={() => setImgLoaded(true)}
                   onError={() => setImgError(true)}
                 />
               ) : (
@@ -132,7 +145,9 @@ export default function VocabCard({
                 <span className="category-pill">{item.category}</span>
               )}
               <h3>{item.spanish}</h3>
-              <p className="back-subtitle">Escucha y memoriza cómo se escribe:</p>
+              <p className="back-subtitle">
+                Escucha y memoriza cómo se escribe:
+              </p>
             </div>
 
             <div className="answers-list">

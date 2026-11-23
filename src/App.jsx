@@ -40,6 +40,29 @@ export default function App() {
     );
   }, [approvedAnimalIds]);
 
+  // Precarga inteligente: primeras 3 tarjetas desde el menú y 3 siguientes al avanzar
+  useEffect(() => {
+    const urlsToPreload = [];
+
+    if (activeView === "menu") {
+      VERBS.slice(0, 3).forEach((v) => urlsToPreload.push(v.image));
+      ANIMALS.slice(0, 3).forEach((a) => urlsToPreload.push(a.image));
+    } else if (activeView === "verbs") {
+      VERBS.slice(verbIndex + 1, verbIndex + 4).forEach((v) =>
+        urlsToPreload.push(v.image)
+      );
+    } else if (activeView === "animals") {
+      ANIMALS.slice(animalIndex + 1, animalIndex + 4).forEach((a) =>
+        urlsToPreload.push(a.image)
+      );
+    }
+
+    urlsToPreload.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, [activeView, verbIndex, animalIndex]);
+
   const verbsProgress = Math.round(
     (approvedVerbIds.length / VERBS.length) * 100
   );
@@ -237,7 +260,9 @@ export default function App() {
             <button
               type="button"
               className="btn-nav"
-              onClick={() => setVerbIndex((prev) => (prev > 0 ? prev - 1 : prev))}
+              onClick={() =>
+                setVerbIndex((prev) => (prev > 0 ? prev - 1 : prev))
+              }
               disabled={verbIndex === 0}
             >
               ← Anterior
@@ -245,7 +270,9 @@ export default function App() {
 
             <button
               type="button"
-              className={`btn-nav ${isCurrentApproved ? "btn-nav-highlight" : ""}`}
+              className={`btn-nav ${
+                isCurrentApproved ? "btn-nav-highlight" : ""
+              }`}
               onClick={() =>
                 setVerbIndex((prev) =>
                   prev < VERBS.length - 1 ? prev + 1 : prev
@@ -358,7 +385,9 @@ export default function App() {
 
           <button
             type="button"
-            className={`btn-nav ${isAnimalApproved ? "btn-nav-highlight" : ""}`}
+            className={`btn-nav ${
+              isAnimalApproved ? "btn-nav-highlight" : ""
+            }`}
             onClick={() =>
               setAnimalIndex((prev) =>
                 prev < ANIMALS.length - 1 ? prev + 1 : prev

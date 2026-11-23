@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { speakEnglish, speakSequence, stopSpeech } from "../utils/speech";
 
 const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -12,8 +12,10 @@ const isCorrect = (input, expected, acceptedList) => {
 };
 
 export default function VerbCard({ verb, isApproved, onApprove }) {
+  const imgRef = useRef(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [form, setForm] = useState({
     infinitive: isApproved ? verb.infinitive : "",
     past: isApproved ? verb.past : "",
@@ -26,6 +28,10 @@ export default function VerbCard({ verb, isApproved, onApprove }) {
   });
 
   useEffect(() => {
+    // Si la imagen ya venía precargada en caché, mostrarla de inmediato
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+      setImgLoaded(true);
+    }
     return () => stopSpeech();
   }, []);
 
@@ -85,7 +91,9 @@ export default function VerbCard({ verb, isApproved, onApprove }) {
         <div className={`card-face card-front ${isApproved ? "approved" : ""}`}>
           <div className="card-media">
             <div
-              className="image-box"
+              className={`image-box ${
+                !imgLoaded && !imgError ? "is-loading" : ""
+              }`}
               onClick={() => setIsFlipped(true)}
               role="button"
               tabIndex={0}
@@ -94,8 +102,13 @@ export default function VerbCard({ verb, isApproved, onApprove }) {
             >
               {!imgError ? (
                 <img
+                  ref={imgRef}
                   src={verb.image}
                   alt={verb.spanish}
+                  fetchPriority="high"
+                  decoding="async"
+                  className={imgLoaded ? "is-loaded" : ""}
+                  onLoad={() => setImgLoaded(true)}
                   onError={() => setImgError(true)}
                 />
               ) : (
