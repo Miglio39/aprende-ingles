@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { MODULES } from "./data/modules";
 import { VERBS } from "./data/verbs";
 import { ANIMALS } from "./data/animals";
+import { FAMILY } from "./data/family";
 import VerbCard from "./components/VerbCard";
 import VocabCard from "./components/VocabCard";
 import "./App.css";
 
 const VERBS_STORAGE_KEY = "aprende_ingles_approved_verbs";
 const ANIMALS_STORAGE_KEY = "aprende_ingles_approved_animals";
+const FAMILY_STORAGE_KEY = "aprende_ingles_approved_family";
 
 export default function App() {
   const [activeView, setActiveView] = useState("menu");
@@ -29,6 +31,14 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Estado módulo Familia
+  const [familyIndex, setFamilyIndex] = useState(0);
+  const [familyResetKey, setFamilyResetKey] = useState(0);
+  const [approvedFamilyIds, setApprovedFamilyIds] = useState(() => {
+    const saved = localStorage.getItem(FAMILY_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     localStorage.setItem(VERBS_STORAGE_KEY, JSON.stringify(approvedVerbIds));
   }, [approvedVerbIds]);
@@ -40,13 +50,18 @@ export default function App() {
     );
   }, [approvedAnimalIds]);
 
-  // Precarga inteligente: primeras 3 tarjetas desde el menú y 3 siguientes al avanzar
+  useEffect(() => {
+    localStorage.setItem(FAMILY_STORAGE_KEY, JSON.stringify(approvedFamilyIds));
+  }, [approvedFamilyIds]);
+
+  // Precarga inteligente: primeras tarjetas desde el menú y 3 siguientes al avanzar
   useEffect(() => {
     const urlsToPreload = [];
 
     if (activeView === "menu") {
-      VERBS.slice(0, 3).forEach((v) => urlsToPreload.push(v.image));
-      ANIMALS.slice(0, 3).forEach((a) => urlsToPreload.push(a.image));
+      VERBS.slice(0, 2).forEach((v) => urlsToPreload.push(v.image));
+      ANIMALS.slice(0, 2).forEach((a) => urlsToPreload.push(a.image));
+      FAMILY.slice(0, 2).forEach((f) => urlsToPreload.push(f.image));
     } else if (activeView === "verbs") {
       VERBS.slice(verbIndex + 1, verbIndex + 4).forEach((v) =>
         urlsToPreload.push(v.image)
@@ -55,19 +70,26 @@ export default function App() {
       ANIMALS.slice(animalIndex + 1, animalIndex + 4).forEach((a) =>
         urlsToPreload.push(a.image)
       );
+    } else if (activeView === "family") {
+      FAMILY.slice(familyIndex + 1, familyIndex + 4).forEach((f) =>
+        urlsToPreload.push(f.image)
+      );
     }
 
     urlsToPreload.forEach((src) => {
       const img = new Image();
       img.src = src;
     });
-  }, [activeView, verbIndex, animalIndex]);
+  }, [activeView, verbIndex, animalIndex, familyIndex]);
 
   const verbsProgress = Math.round(
     (approvedVerbIds.length / VERBS.length) * 100
   );
   const animalsProgress = Math.round(
     (approvedAnimalIds.length / ANIMALS.length) * 100
+  );
+  const familyProgress = Math.round(
+    (approvedFamilyIds.length / FAMILY.length) * 100
   );
 
   const handleSelectModule = (mod) => {
@@ -94,6 +116,11 @@ export default function App() {
         total: ANIMALS.length,
         percent: animalsProgress,
       },
+      family: {
+        approved: approvedFamilyIds.length,
+        total: FAMILY.length,
+        percent: familyProgress,
+      },
     };
 
     return (
@@ -105,7 +132,7 @@ export default function App() {
         </header>
 
         <section className="menu-content">
-          {/* Módulos disponibles (Verbos y Animales) */}
+          {/* Módulos disponibles (Verbos, Animales y Familia) */}
           <div className="featured-grid">
             {readyModules.map((mod) => {
               const stats = progressByModule[mod.id];
@@ -309,8 +336,124 @@ export default function App() {
   }
 
   /* ===== PANTALLA 3: MÓDULO DE ANIMALES ===== */
-  const currentAnimal = ANIMALS[animalIndex];
-  const isAnimalApproved = approvedAnimalIds.includes(currentAnimal.id);
+  if (activeView === "animals") {
+    const currentAnimal = ANIMALS[animalIndex];
+    const isAnimalApproved = approvedAnimalIds.includes(currentAnimal.id);
+
+    return (
+      <main className="app-shell">
+        <header className="top-bar">
+          <div className="title-row">
+            <div className="title-left">
+              <button
+                type="button"
+                className="btn-back"
+                onClick={() => setActiveView("menu")}
+              >
+                ← Menú
+              </button>
+              <h1>Animales</h1>
+            </div>
+            <button
+              onClick={() => {
+                setApprovedAnimalIds([]);
+                localStorage.removeItem(ANIMALS_STORAGE_KEY);
+                setAnimalIndex(0);
+                setAnimalResetKey((prev) => prev + 1);
+              }}
+              className="btn-reset"
+            >
+              Reiniciar
+            </button>
+          </div>
+
+          <div className="progress-meta">
+            <span>
+              Tarjeta <strong>{animalIndex + 1}</strong> de {ANIMALS.length}
+            </span>
+            <span>
+              Aprobados: <strong>{approvedAnimalIds.length}</strong> /{" "}
+              {ANIMALS.length}
+            </span>
+          </div>
+
+          <div className="progress-track">
+            <div
+              className="progress-fill"
+              style={{ width: `${animalsProgress}%` }}
+            />
+          </div>
+        </header>
+
+        <section className="stage">
+          <VocabCard
+            key={`${currentAnimal.id}-${animalResetKey}`}
+            item={currentAnimal}
+            isApproved={isAnimalApproved}
+            inputLabel="Animal en inglés"
+            placeholder="Escribe el nombre del animal..."
+            onApprove={(id) =>
+              setApprovedAnimalIds((prev) =>
+                prev.includes(id) ? prev : [...prev, id]
+              )
+            }
+          />
+
+          <div className="nav-controls">
+            <button
+              type="button"
+              className="btn-nav"
+              onClick={() =>
+                setAnimalIndex((prev) => (prev > 0 ? prev - 1 : prev))
+              }
+              disabled={animalIndex === 0}
+            >
+              ← Anterior
+            </button>
+
+            <button
+              type="button"
+              className={`btn-nav ${
+                isAnimalApproved ? "btn-nav-highlight" : ""
+              }`}
+              onClick={() =>
+                setAnimalIndex((prev) =>
+                  prev < ANIMALS.length - 1 ? prev + 1 : prev
+                )
+              }
+              disabled={animalIndex === ANIMALS.length - 1}
+            >
+              Siguiente →
+            </button>
+          </div>
+
+          <div className="dots-strip" aria-label="Selector rápido de animales">
+            {ANIMALS.map((animal, index) => {
+              const approved = approvedAnimalIds.includes(animal.id);
+              const active = index === animalIndex;
+              return (
+                <button
+                  key={animal.id}
+                  type="button"
+                  className={`dot-item ${active ? "is-active" : ""} ${
+                    approved ? "is-approved" : ""
+                  }`}
+                  onClick={() => setAnimalIndex(index)}
+                  title={`${index + 1}. ${animal.spanish}`}
+                >
+                  {index + 1}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  /* ===== PANTALLA 4: MÓDULO DE FAMILIA ===== */
+  const currentMember = FAMILY[familyIndex];
+  const isFamilyApproved = approvedFamilyIds.includes(currentMember.id);
 
   return (
     <main className="app-shell">
@@ -324,14 +467,14 @@ export default function App() {
             >
               ← Menú
             </button>
-            <h1>Animales</h1>
+            <h1>Familia</h1>
           </div>
           <button
             onClick={() => {
-              setApprovedAnimalIds([]);
-              localStorage.removeItem(ANIMALS_STORAGE_KEY);
-              setAnimalIndex(0);
-              setAnimalResetKey((prev) => prev + 1);
+              setApprovedFamilyIds([]);
+              localStorage.removeItem(FAMILY_STORAGE_KEY);
+              setFamilyIndex(0);
+              setFamilyResetKey((prev) => prev + 1);
             }}
             className="btn-reset"
           >
@@ -341,31 +484,31 @@ export default function App() {
 
         <div className="progress-meta">
           <span>
-            Tarjeta <strong>{animalIndex + 1}</strong> de {ANIMALS.length}
+            Tarjeta <strong>{familyIndex + 1}</strong> de {FAMILY.length}
           </span>
           <span>
-            Aprobados: <strong>{approvedAnimalIds.length}</strong> /{" "}
-            {ANIMALS.length}
+            Aprobados: <strong>{approvedFamilyIds.length}</strong> /{" "}
+            {FAMILY.length}
           </span>
         </div>
 
         <div className="progress-track">
           <div
             className="progress-fill"
-            style={{ width: `${animalsProgress}%` }}
+            style={{ width: `${familyProgress}%` }}
           />
         </div>
       </header>
 
       <section className="stage">
         <VocabCard
-          key={`${currentAnimal.id}-${animalResetKey}`}
-          item={currentAnimal}
-          isApproved={isAnimalApproved}
-          inputLabel="Animal en inglés"
-          placeholder="Escribe el nombre del animal..."
+          key={`${currentMember.id}-${familyResetKey}`}
+          item={currentMember}
+          isApproved={isFamilyApproved}
+          inputLabel="Miembro en inglés"
+          placeholder="Escribe el miembro de la familia..."
           onApprove={(id) =>
-            setApprovedAnimalIds((prev) =>
+            setApprovedFamilyIds((prev) =>
               prev.includes(id) ? prev : [...prev, id]
             )
           }
@@ -376,9 +519,9 @@ export default function App() {
             type="button"
             className="btn-nav"
             onClick={() =>
-              setAnimalIndex((prev) => (prev > 0 ? prev - 1 : prev))
+              setFamilyIndex((prev) => (prev > 0 ? prev - 1 : prev))
             }
-            disabled={animalIndex === 0}
+            disabled={familyIndex === 0}
           >
             ← Anterior
           </button>
@@ -386,32 +529,32 @@ export default function App() {
           <button
             type="button"
             className={`btn-nav ${
-              isAnimalApproved ? "btn-nav-highlight" : ""
+              isFamilyApproved ? "btn-nav-highlight" : ""
             }`}
             onClick={() =>
-              setAnimalIndex((prev) =>
-                prev < ANIMALS.length - 1 ? prev + 1 : prev
+              setFamilyIndex((prev) =>
+                prev < FAMILY.length - 1 ? prev + 1 : prev
               )
             }
-            disabled={animalIndex === ANIMALS.length - 1}
+            disabled={familyIndex === FAMILY.length - 1}
           >
             Siguiente →
           </button>
         </div>
 
-        <div className="dots-strip" aria-label="Selector rápido de animales">
-          {ANIMALS.map((animal, index) => {
-            const approved = approvedAnimalIds.includes(animal.id);
-            const active = index === animalIndex;
+        <div className="dots-strip" aria-label="Selector rápido de familia">
+          {FAMILY.map((member, index) => {
+            const approved = approvedFamilyIds.includes(member.id);
+            const active = index === familyIndex;
             return (
               <button
-                key={animal.id}
+                key={member.id}
                 type="button"
                 className={`dot-item ${active ? "is-active" : ""} ${
                   approved ? "is-approved" : ""
                 }`}
-                onClick={() => setAnimalIndex(index)}
-                title={`${index + 1}. ${animal.spanish}`}
+                onClick={() => setFamilyIndex(index)}
+                title={`${index + 1}. ${member.spanish}`}
               >
                 {index + 1}
               </button>

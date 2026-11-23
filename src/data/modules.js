@@ -14,17 +14,17 @@ export const MODULES = [
     ready: true,
   },
   {
+    id: "family",
+    title: "Familia",
+    description: "Padres, abuelos, suegros y parientes",
+    emoji: "👨‍👩‍👧‍👦",
+    ready: true,
+  },
+  {
     id: "food",
     title: "Comidas",
     description: "Frutas, bebidas y platos diarios",
     emoji: "🍽️",
-    ready: false,
-  },
-  {
-    id: "family",
-    title: "Familia",
-    description: "Padres, hermanos y parientes",
-    emoji: "👨‍👩‍👧‍👦",
     ready: false,
   },
   {

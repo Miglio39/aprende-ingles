@@ -23,7 +23,7 @@ const RAW_VERBS = [
   ["Cocinar", "🍳", "cook", "cooked", "cooked"],
   ["Bailar", "💃", "dance", "danced", "danced"],
   ["Brincar / Saltar", "🦘", "jump", "jumped", "jumped"],
-  ["Hablar", "🗣️", "talk", "talked", "talked"],
+  ["Conversar", "🗣️", "talk", "talked", "talked"],
   ["Preguntar", "❓", "ask", "asked", "asked"],
   ["Lavar", "🧼", "wash", "washed", "washed"],
   ["Esperar", "⏳", "wait", "waited", "waited"],

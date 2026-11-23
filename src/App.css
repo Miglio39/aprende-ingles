@@ -833,3 +833,9 @@ body {
     font-size: 0.72rem;
   }
 }
+
+/* Evita huecos vacíos en el menú cuando una fila tiene número impar de tarjetas */
+.featured-grid .module-card:last-child:nth-child(odd),
+.modules-grid .module-card:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}

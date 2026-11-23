@@ -2,7 +2,7 @@ import { readdir, readFile, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 
-const FOLDERS = ["public/images/verbs", "public/images/animals"];
+const FOLDERS = [  "public/images/verbs",  "public/images/animals",  "public/images/family",];
 const VALID_EXTS = new Set([".jpg", ".jpeg", ".png"]);
 const MAX_WIDTH = 800;
 const QUALITY = 80;
