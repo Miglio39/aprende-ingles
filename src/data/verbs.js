@@ -243,7 +243,7 @@ export const VERBS = RAW_VERBS.map(
     id: index + 1,
     spanish,
     emoji,
-    image: `/images/verbs/${infinitive}.jpg`,
+    image: `/images/verbs/${infinitive}.webp`,
     infinitive,
     past,
     pastAccepted: parseAccepted(past),

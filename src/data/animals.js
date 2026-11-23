@@ -172,7 +172,7 @@ export const ANIMALS = RAW_ANIMALS.map(
     id: index + 1,
     spanish,
     emoji,
-    image: `/images/animals/${slug}.jpg`,
+    image: `/images/animals/${slug}.webp`,
     english,
     englishAccepted: parseAccepted(english),
     category,
