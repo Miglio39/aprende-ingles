@@ -21,7 +21,7 @@ body {
 .app-shell {
   height: 100dvh;
   width: 100%;
-  max-width: 520px;
+  max-width: 460px;
   margin: 0 auto;
   padding: 0.7rem 0.9rem 0.85rem;
   display: flex;
@@ -325,19 +325,15 @@ body {
   gap: 0.65rem;
 }
 
-/* Tarjeta 3D flexible */
+/* Tarjeta 3D con altura automática (mismo tamaño de imagen en ambos módulos) */
 .card-scene {
-  flex: 1;
   width: 100%;
-  min-height: 410px;
-  max-height: 620px;
   perspective: 1200px;
 }
 
 .card-inner {
-  position: relative;
+  display: grid;
   width: 100%;
-  height: 100%;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
 }
@@ -347,8 +343,8 @@ body {
 }
 
 .card-face {
-  position: absolute;
-  inset: 0;
+  grid-area: 1 / 1;
+  position: relative;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   background: #ffffff;
@@ -388,10 +384,8 @@ body {
   border-color: #16a34a;
 }
 
-/* Bloque de imagen fluido + efecto skeleton */
+/* Bloque de imagen: mismo tamaño en Verbos y Animales, cubriendo todo el recuadro */
 .card-media {
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
@@ -399,9 +393,8 @@ body {
 
 .image-box {
   position: relative;
-  flex: 1;
-  min-height: 115px;
   width: 100%;
+  height: clamp(170px, 33dvh, 265px);
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
@@ -421,7 +414,8 @@ body {
 .image-box img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center;
   display: block;
   opacity: 0;
   transition: opacity 0.22s ease;
@@ -797,9 +791,13 @@ body {
 /* Escritorio */
 @media (min-width: 768px) {
   .app-shell {
-    max-width: 600px;
+    max-width: 480px;
     padding: 0.9rem 1rem 1rem;
     gap: 0.75rem;
+  }
+
+  .menu-shell {
+    max-width: 540px;
   }
 
   .title-row h1 {
@@ -807,7 +805,7 @@ body {
   }
 
   .card-face {
-    padding: 1rem 1.25rem;
+    padding: 1rem 1.2rem;
     border-radius: 22px;
   }
 
