@@ -34,7 +34,6 @@ export default function App() {
   const [activeView, setActiveView] = useState("menu");
   const [comingSoonModule, setComingSoonModule] = useState(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const [sfxOn, setSfxOn] = useState(isSfxEnabled);
 
   const { isInstalled, isIos, canPromptInstall, promptInstall } =
@@ -76,52 +75,36 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Detecta teclado móvil y ajusta la altura real visible (Android e iOS)
+  // Permite desplazar suavemente al campo activo sobre el teclado sin cambiar el tamaño de la tarjeta
   useEffect(() => {
-    let blurTimer;
+    let scrollTimer;
 
     const syncViewport = () => {
       const vv = window.visualViewport;
       const height = vv ? vv.height : window.innerHeight;
       document.documentElement.style.setProperty("--app-height", `${height}px`);
-      if (vv && vv.offsetTop > 0) {
-        window.scrollTo(0, 0);
-      }
     };
 
     const handleFocusIn = (e) => {
       if (e.target.tagName !== "INPUT") return;
       if (window.innerWidth > 767) return;
-      clearTimeout(blurTimer);
-      setIsTyping(true);
-      syncViewport();
-    };
-
-    const handleFocusOut = (e) => {
-      if (e.target.tagName !== "INPUT") return;
-      clearTimeout(blurTimer);
-      blurTimer = setTimeout(() => {
-        if (document.activeElement?.tagName !== "INPUT") {
-          setIsTyping(false);
-          syncViewport();
-        }
-      }, 120);
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        syncViewport();
+        e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 220);
     };
 
     syncViewport();
     document.addEventListener("focusin", handleFocusIn);
-    document.addEventListener("focusout", handleFocusOut);
     window.addEventListener("resize", syncViewport);
     window.visualViewport?.addEventListener("resize", syncViewport);
-    window.visualViewport?.addEventListener("scroll", syncViewport);
 
     return () => {
-      clearTimeout(blurTimer);
+      clearTimeout(scrollTimer);
       document.removeEventListener("focusin", handleFocusIn);
-      document.removeEventListener("focusout", handleFocusOut);
       window.removeEventListener("resize", syncViewport);
       window.visualViewport?.removeEventListener("resize", syncViewport);
-      window.visualViewport?.removeEventListener("scroll", syncViewport);
     };
   }, []);
 
@@ -207,14 +190,12 @@ export default function App() {
 
   const goToMenu = () => {
     document.activeElement?.blur();
-    setIsTyping(false);
     setActiveView("menu");
   };
 
   const handleSelectModule = (mod) => {
     if (mod.ready) {
       playNextSound();
-      setIsTyping(false);
       setActiveView(mod.id);
     } else {
       setComingSoonModule(mod);
@@ -448,7 +429,7 @@ export default function App() {
     const isCurrentApproved = approvedVerbIds.includes(currentVerb.id);
 
     return (
-      <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
+      <main className="app-shell">
         <header className="top-bar">
           <div className="title-row">
             <div className="title-left">
@@ -613,7 +594,7 @@ export default function App() {
     const isAnimalApproved = approvedAnimalIds.includes(currentAnimal.id);
 
     return (
-      <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
+      <main className="app-shell">
         <header className="top-bar">
           <div className="title-row">
             <div className="title-left">
@@ -744,7 +725,7 @@ export default function App() {
   const isFamilyApproved = approvedFamilyIds.includes(currentMember.id);
 
   return (
-    <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
+    <main className="app-shell">
       <header className="top-bar">
         <div className="title-row">
           <div className="title-left">
