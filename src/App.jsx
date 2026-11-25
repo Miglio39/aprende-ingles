@@ -30,7 +30,6 @@ const DEFAULT_VERBS_PROGRESS = {
 export default function App() {
   const [activeView, setActiveView] = useState("menu");
   const [comingSoonModule, setComingSoonModule] = useState(null);
-  const [isTyping, setIsTyping] = useState(false);
 
   // Estado módulo Verbos (con modo de práctica independiente)
   const [verbMode, setVerbMode] = useState(() => {
@@ -45,7 +44,6 @@ export default function App() {
       return { ...DEFAULT_VERBS_PROGRESS, ...JSON.parse(savedByMode) };
     }
 
-    // Migra progreso anterior de Verbos al modo "Los 3 tiempos"
     const legacySaved = localStorage.getItem(LEGACY_VERBS_STORAGE_KEY);
     return {
       ...DEFAULT_VERBS_PROGRESS,
@@ -69,9 +67,18 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Detecta teclado móvil y ajusta la altura real visible (Android e iOS)
+  // Ajusta el alto visible real encima del teclado y centra el campo activo sin ocultar nada
   useEffect(() => {
-    let blurTimer;
+    let scrollTimer;
+
+    const scrollActiveInput = (el) => {
+      if (!el || el.tagName !== "INPUT") return;
+      if (window.innerWidth > 767) return;
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 240);
+    };
 
     const syncViewport = () => {
       const vv = window.visualViewport;
@@ -80,38 +87,26 @@ export default function App() {
       if (vv && vv.offsetTop > 0) {
         window.scrollTo(0, 0);
       }
+      if (document.activeElement?.tagName === "INPUT") {
+        scrollActiveInput(document.activeElement);
+      }
     };
 
     const handleFocusIn = (e) => {
-      if (e.target.tagName !== "INPUT") return;
-      if (window.innerWidth > 767) return;
-      clearTimeout(blurTimer);
-      setIsTyping(true);
-      syncViewport();
-    };
-
-    const handleFocusOut = (e) => {
-      if (e.target.tagName !== "INPUT") return;
-      clearTimeout(blurTimer);
-      blurTimer = setTimeout(() => {
-        if (document.activeElement?.tagName !== "INPUT") {
-          setIsTyping(false);
-          syncViewport();
-        }
-      }, 120);
+      if (e.target.tagName === "INPUT") {
+        scrollActiveInput(e.target);
+      }
     };
 
     syncViewport();
     document.addEventListener("focusin", handleFocusIn);
-    document.addEventListener("focusout", handleFocusOut);
     window.addEventListener("resize", syncViewport);
     window.visualViewport?.addEventListener("resize", syncViewport);
     window.visualViewport?.addEventListener("scroll", syncViewport);
 
     return () => {
-      clearTimeout(blurTimer);
+      clearTimeout(scrollTimer);
       document.removeEventListener("focusin", handleFocusIn);
-      document.removeEventListener("focusout", handleFocusOut);
       window.removeEventListener("resize", syncViewport);
       window.visualViewport?.removeEventListener("resize", syncViewport);
       window.visualViewport?.removeEventListener("scroll", syncViewport);
@@ -184,20 +179,18 @@ export default function App() {
 
   const goToMenu = () => {
     document.activeElement?.blur();
-    setIsTyping(false);
     setActiveView("menu");
   };
 
   const handleSelectModule = (mod) => {
     if (mod.ready) {
-      setIsTyping(false);
       setActiveView(mod.id);
     } else {
       setComingSoonModule(mod);
     }
   };
 
-  /* ===== PANTALLA 1: MENÚ PRINCIPAL (TODOS LOS CUADROS DEL MISMO TAMAÑO) ===== */
+  /* ===== PANTALLA 1: MENÚ PRINCIPAL (CUADROS DEL MISMO TAMAÑO) ===== */
   if (activeView === "menu") {
     const progressByModule = {
       verbs: {
@@ -326,7 +319,7 @@ export default function App() {
     const isCurrentApproved = approvedVerbIds.includes(currentVerb.id);
 
     return (
-      <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
+      <main className="app-shell">
         <header className="top-bar">
           <div className="title-row">
             <div className="title-left">
@@ -355,7 +348,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Selector de tiempo verbal a practicar */}
           <div
             className="verb-mode-bar"
             role="tablist"
@@ -477,7 +469,7 @@ export default function App() {
     const isAnimalApproved = approvedAnimalIds.includes(currentAnimal.id);
 
     return (
-      <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
+      <main className="app-shell">
         <header className="top-bar">
           <div className="title-row">
             <div className="title-left">
@@ -523,8 +515,8 @@ export default function App() {
             key={`${currentAnimal.id}-${animalResetKey}`}
             item={currentAnimal}
             isApproved={isAnimalApproved}
-            inputLabel="Animal en inglés"
-            placeholder="Escribe el nombre del animal..."
+            inputLabel="En inglés"
+            placeholder="Escribe el animal..."
             onApprove={(id) => {
               document.activeElement?.blur();
               setApprovedAnimalIds((prev) =>
@@ -590,7 +582,7 @@ export default function App() {
   const isFamilyApproved = approvedFamilyIds.includes(currentMember.id);
 
   return (
-    <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
+    <main className="app-shell">
       <header className="top-bar">
         <div className="title-row">
           <div className="title-left">
@@ -636,8 +628,8 @@ export default function App() {
           key={`${currentMember.id}-${familyResetKey}`}
           item={currentMember}
           isApproved={isFamilyApproved}
-          inputLabel="Miembro en inglés"
-          placeholder="Escribe el miembro de la familia..."
+          inputLabel="En inglés"
+          placeholder="Escribe el miembro..."
           onApprove={(id) => {
             document.activeElement?.blur();
             setApprovedFamilyIds((prev) =>

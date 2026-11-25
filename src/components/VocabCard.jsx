@@ -15,23 +15,29 @@ export default function VocabCard({
   item,
   isApproved,
   onApprove,
-  inputLabel = "Nombre en inglés",
+  inputLabel = "En inglés",
   placeholder = "Escribe en inglés...",
 }) {
   const imgRef = useRef(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [answer, setAnswer] = useState(isApproved ? item.english : "");
+  const [answer, setAnswer] = useState(isApproved && item ? item.english : "");
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    // Si la imagen ya venía precargada en caché, mostrarla de inmediato
     if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
       setImgLoaded(true);
     }
     return () => stopSpeech();
   }, []);
+
+  if (!item) return null;
+
+  const handleOpenBack = () => {
+    document.activeElement?.blur();
+    setIsFlipped(true);
+  };
 
   const handleCloseBack = () => {
     stopSpeech();
@@ -49,6 +55,7 @@ export default function VocabCard({
     setHasError(!ok);
 
     if (ok) {
+      document.activeElement?.blur();
       onApprove(item.id);
     }
   };
@@ -63,10 +70,10 @@ export default function VocabCard({
               className={`image-box ${
                 !imgLoaded && !imgError ? "is-loading" : ""
               }`}
-              onClick={() => setIsFlipped(true)}
+              onClick={handleOpenBack}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === "Enter" && setIsFlipped(true)}
+              onKeyDown={(e) => e.key === "Enter" && handleOpenBack()}
               title="Haz clic en la imagen para ver la respuesta"
             >
               {!imgError ? (
@@ -93,16 +100,20 @@ export default function VocabCard({
               <button
                 type="button"
                 className="btn-flip-hint"
-                onClick={() => setIsFlipped(true)}
+                onClick={handleOpenBack}
               >
-                Girar tarjeta ↻
+                Girar ↻
               </button>
             </div>
           </div>
 
           <form className="verb-form" onSubmit={handleSubmit}>
-            <label>
-              {inputLabel}
+            <label
+              className={`field-row ${hasError ? "is-error" : ""} ${
+                isApproved ? "is-approved" : ""
+              }`}
+            >
+              <span className="field-tag">{inputLabel}</span>
               <input
                 type="text"
                 autoComplete="off"
@@ -112,7 +123,6 @@ export default function VocabCard({
                 enterKeyHint="done"
                 value={answer}
                 disabled={isApproved}
-                className={hasError ? "input-error" : ""}
                 placeholder={placeholder}
                 onChange={(e) => {
                   setAnswer(e.target.value);

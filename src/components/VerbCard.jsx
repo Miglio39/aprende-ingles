@@ -15,7 +15,8 @@ const FIELD_CONFIG = {
   infinitive: {
     key: "infinitive",
     label: "Infinitivo",
-    placeholder: "Escribe el infinitivo...",
+    shortLabel: "Infinitivo",
+    placeholder: "Escribe aquí...",
     acceptedKey: "infinitiveAccepted",
     isPastOrParticiple: false,
     approvedText: "✓ ¡Excelente! Infinitivo dominado",
@@ -23,7 +24,8 @@ const FIELD_CONFIG = {
   past: {
     key: "past",
     label: "Pasado simple",
-    placeholder: "Escribe el pasado simple...",
+    shortLabel: "P. simple",
+    placeholder: "Escribe aquí...",
     acceptedKey: "pastAccepted",
     isPastOrParticiple: true,
     approvedText: "✓ ¡Excelente! Pasado simple dominado",
@@ -31,7 +33,8 @@ const FIELD_CONFIG = {
   participle: {
     key: "participle",
     label: "Pasado participio",
-    placeholder: "Escribe el pasado participio...",
+    shortLabel: "Participio",
+    placeholder: "Escribe aquí...",
     acceptedKey: "participleAccepted",
     isPastOrParticiple: true,
     approvedText: "✓ ¡Excelente! Participio dominado",
@@ -195,7 +198,7 @@ export default function VerbCard({
                 className="btn-flip-hint"
                 onClick={handleOpenBack}
               >
-                Girar tarjeta ↻
+                Girar ↻
               </button>
             </div>
           </div>
@@ -204,8 +207,13 @@ export default function VerbCard({
             {activeFields.map((field, idx) => {
               const isLast = idx === activeFields.length - 1;
               return (
-                <label key={field.key}>
-                  {field.label}
+                <label
+                  key={field.key}
+                  className={`field-row ${
+                    errors[field.key] ? "is-error" : ""
+                  } ${isApproved ? "is-approved" : ""}`}
+                >
+                  <span className="field-tag">{field.shortLabel}</span>
                   <input
                     ref={(el) => {
                       inputRefs.current[idx] = el;
@@ -218,7 +226,6 @@ export default function VerbCard({
                     enterKeyHint={isLast ? "done" : "next"}
                     value={form[field.key]}
                     disabled={isApproved}
-                    className={errors[field.key] ? "input-error" : ""}
                     placeholder={field.placeholder}
                     onKeyDown={(e) => handleInputKeyDown(e, idx)}
                     onChange={(e) => handleChange(field.key, e.target.value)}
