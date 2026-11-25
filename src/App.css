@@ -18,7 +18,7 @@ body {
   color: #0f172a;
 }
 
-/* Contenedor principal desplazable sobre teclado sin deformar la tarjeta */
+/* ===== CONTENEDOR BASE (MÓVIL / APP) ===== */
 .app-shell {
   height: var(--app-height, 100dvh);
   width: 100%;
@@ -85,13 +85,14 @@ body {
 }
 
 .menu-content {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
   margin-bottom: auto;
 }
 
-/* Cuadrícula uniforme: los 8 módulos tienen el mismo tamaño */
+/* Cuadrícula uniforme: todas las tarjetas tienen el mismo tamaño */
 .modules-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -104,7 +105,6 @@ body {
   height: 100%;
   min-width: 0;
   text-align: left;
-  background: #ffffff;
   border: 2px solid #e2e8f0;
   border-radius: 18px;
   padding: 0.78rem 0.82rem;
@@ -112,27 +112,34 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
   transition: transform 0.18s ease, border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .module-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.09);
 }
 
 .module-card-ready {
   border-color: #2563eb;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.1);
+}
+
+.module-card-ready:hover {
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.16);
 }
 
 .module-card-locked {
-  background: #ffffff;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  opacity: 0.82;
 }
 
 .module-card-locked:hover {
-  border-color: #94a3b8;
+  border-color: #cbd5e1;
+  opacity: 0.96;
 }
 
 .module-card-top {
@@ -155,14 +162,27 @@ body {
 .module-info h2 {
   margin: 0;
   font-size: 0.98rem;
+  line-height: 1.2;
   color: #0f172a;
 }
 
 .module-info p {
-  margin: 0.16rem 0 0;
+  margin: 0.18rem 0 0;
   font-size: 0.76rem;
   color: #475569;
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.module-card-locked .module-info h2 {
+  color: #334155;
+}
+
+.module-card-locked .module-info p {
+  color: #64748b;
 }
 
 .module-footer {
@@ -170,6 +190,7 @@ body {
   flex-direction: column;
   gap: 0.26rem;
   margin-top: auto;
+  padding-top: 0.2rem;
 }
 
 .module-progress-text {
@@ -187,10 +208,11 @@ body {
 }
 
 .progress-track-locked {
-  background: #f1f5f9;
+  background: #e2e8f0;
+  opacity: 0.55;
 }
 
-/* Etiquetas */
+/* Etiquetas Disponible / Pronto */
 .pill {
   font-size: 0.68rem;
   font-weight: 700;
@@ -265,7 +287,7 @@ body {
 
 .modal-box {
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   background: #ffffff;
   border-radius: 22px;
   padding: 1.5rem 1.35rem;
@@ -378,6 +400,10 @@ body {
   font-weight: 700;
   padding: 0.45rem 0.75rem;
   cursor: pointer;
+}
+
+.btn-install-now:hover {
+  background: #1d4ed8;
 }
 
 .btn-install-close {
@@ -517,7 +543,7 @@ body {
   transition: width 0.35s ease;
 }
 
-/* ===== ESCENARIO PRINCIPAL ===== */
+/* ===== ESCENARIO PRINCIPAL (VERTICAL) ===== */
 .stage {
   flex: 1 0 auto;
   width: 100%;
@@ -528,7 +554,7 @@ body {
   gap: 0.55rem;
 }
 
-/* Tarjeta 3D con dimensiones fijas (no se encoge con el teclado) */
+/* Tarjeta 3D con dimensiones fijas en móvil (no se encoge con el teclado) */
 .card-scene {
   width: 100%;
   flex-shrink: 0;
@@ -590,7 +616,7 @@ body {
   border-color: #16a34a;
 }
 
-/* Imagen con altura fija por ancho (no depende de la altura del teclado) */
+/* Imagen fija en móvil para que no cambie de tamaño al abrir el teclado */
 .card-media {
   display: flex;
   flex-direction: column;
@@ -600,7 +626,7 @@ body {
 .image-box {
   position: relative;
   width: 100%;
-  height: 195px;
+  height: 185px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
@@ -706,6 +732,7 @@ body {
   gap: 0.14rem;
 }
 
+/* 16px evita zoom automático en iOS Safari */
 .verb-form input {
   width: 100%;
   padding: 0.4rem 0.7rem;
@@ -921,6 +948,10 @@ body {
   font-size: 0.94rem;
 }
 
+.btn-flip-back:hover {
+  background: #1e293b;
+}
+
 .btn-reset {
   padding: 0.36rem 0.75rem;
   background: #e2e8f0;
@@ -1032,35 +1063,85 @@ body {
   }
 }
 
-/* ===== ESCRITORIO ===== */
+/* ===== TABLET (768px – 959px) ===== */
 @media (min-width: 768px) {
   .app-shell {
-    max-width: 480px;
-    padding: 0.9rem 1rem 1rem;
+    height: 100dvh;
+    max-width: 540px;
+    padding: 0.9rem 1.25rem 1rem;
     gap: 0.7rem;
   }
 
   .menu-shell {
-    max-width: 540px;
-    padding-bottom: 1.5rem;
+    max-width: 680px;
+    padding: 1.5rem 1.5rem 2rem;
+    gap: 1.25rem;
+  }
+
+  .menu-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .menu-header p {
+    font-size: 0.96rem;
+  }
+
+  .modules-grid {
+    gap: 0.85rem;
+  }
+
+  .module-card {
+    padding: 1rem 1.05rem;
+    border-radius: 20px;
+    gap: 0.6rem;
+  }
+
+  .module-icon {
+    font-size: 1.75rem;
+  }
+
+  .module-info h2 {
+    font-size: 1.06rem;
+  }
+
+  .module-info p {
+    font-size: 0.82rem;
   }
 
   .title-row h1 {
     font-size: 1.4rem;
   }
 
+  .verb-mode-btn {
+    font-size: 0.84rem;
+    min-height: 36px;
+  }
+
   .card-face {
-    padding: 1rem 1.2rem;
+    padding: 1rem 1.25rem;
     border-radius: 22px;
   }
 
+  .card-front {
+    gap: 0.65rem;
+  }
+
+  /* En escritorio/tablet la imagen se adapta a la pantalla sin generar scroll */
   .image-box {
-    height: 235px;
+    height: clamp(185px, 28vh, 255px);
+  }
+
+  .verb-spanish {
+    font-size: 1.12rem;
+  }
+
+  .verb-form input {
+    padding: 0.48rem 0.78rem;
   }
 
   .dots-strip {
     display: flex;
-    gap: 0.4rem;
+    gap: 0.42rem;
     overflow-x: auto;
     padding: 2px 0 6px;
     scrollbar-width: thin;
@@ -1079,6 +1160,67 @@ body {
   .dot-item {
     flex: 0 0 34px;
     height: 28px;
-    font-size: 0.72rem;
+    font-size: 0.74rem;
+  }
+
+  /* Aviso de instalación discreto en esquina inferior derecha */
+  .install-banner {
+    left: auto;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    transform: none;
+    width: 360px;
+  }
+}
+
+/* ===== ESCRITORIO AMPLIO (≥ 960px) ===== */
+@media (min-width: 960px) {
+  .app-shell {
+    max-width: 560px;
+    padding: 1rem 1.25rem;
+    gap: 0.75rem;
+  }
+
+  /* Menú tipo panel de escritorio: 4 columnas x 2 filas en 1 sola pantalla */
+  .menu-shell {
+    max-width: 960px;
+    padding: 1.75rem 2rem;
+    gap: 1.5rem;
+  }
+
+  .menu-header h1 {
+    font-size: 2rem;
+  }
+
+  .menu-header p {
+    font-size: 1rem;
+  }
+
+  .modules-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .module-card {
+    padding: 1.1rem 1.1rem;
+    min-height: 185px;
+    gap: 0.65rem;
+  }
+
+  .module-icon {
+    font-size: 1.9rem;
+  }
+
+  .module-info h2 {
+    font-size: 1.08rem;
+  }
+
+  .module-info p {
+    font-size: 0.82rem;
+    -webkit-line-clamp: 3;
+  }
+
+  .module-progress-text {
+    font-size: 0.78rem;
   }
 }
