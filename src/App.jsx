@@ -30,6 +30,7 @@ const DEFAULT_VERBS_PROGRESS = {
 export default function App() {
   const [activeView, setActiveView] = useState("menu");
   const [comingSoonModule, setComingSoonModule] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
 
   // Estado módulo Verbos (con modo de práctica independiente)
   const [verbMode, setVerbMode] = useState(() => {
@@ -67,6 +68,55 @@ export default function App() {
     const saved = localStorage.getItem(FAMILY_STORAGE_KEY);
     return saved ? JSON.parse(saved) : [];
   });
+
+  // Detecta teclado móvil y ajusta la altura real visible (Android e iOS)
+  useEffect(() => {
+    let blurTimer;
+
+    const syncViewport = () => {
+      const vv = window.visualViewport;
+      const height = vv ? vv.height : window.innerHeight;
+      document.documentElement.style.setProperty("--app-height", `${height}px`);
+      if (vv && vv.offsetTop > 0) {
+        window.scrollTo(0, 0);
+      }
+    };
+
+    const handleFocusIn = (e) => {
+      if (e.target.tagName !== "INPUT") return;
+      if (window.innerWidth > 767) return;
+      clearTimeout(blurTimer);
+      setIsTyping(true);
+      syncViewport();
+    };
+
+    const handleFocusOut = (e) => {
+      if (e.target.tagName !== "INPUT") return;
+      clearTimeout(blurTimer);
+      blurTimer = setTimeout(() => {
+        if (document.activeElement?.tagName !== "INPUT") {
+          setIsTyping(false);
+          syncViewport();
+        }
+      }, 120);
+    };
+
+    syncViewport();
+    document.addEventListener("focusin", handleFocusIn);
+    document.addEventListener("focusout", handleFocusOut);
+    window.addEventListener("resize", syncViewport);
+    window.visualViewport?.addEventListener("resize", syncViewport);
+    window.visualViewport?.addEventListener("scroll", syncViewport);
+
+    return () => {
+      clearTimeout(blurTimer);
+      document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("focusout", handleFocusOut);
+      window.removeEventListener("resize", syncViewport);
+      window.visualViewport?.removeEventListener("resize", syncViewport);
+      window.visualViewport?.removeEventListener("scroll", syncViewport);
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(VERB_MODE_STORAGE_KEY, verbMode);
@@ -132,20 +182,24 @@ export default function App() {
     (approvedFamilyIds.length / FAMILY.length) * 100
   );
 
+  const goToMenu = () => {
+    document.activeElement?.blur();
+    setIsTyping(false);
+    setActiveView("menu");
+  };
+
   const handleSelectModule = (mod) => {
     if (mod.ready) {
+      setIsTyping(false);
       setActiveView(mod.id);
     } else {
       setComingSoonModule(mod);
     }
   };
 
-  /* ===== PANTALLA 1: MENÚ PRINCIPAL ===== */
+  /* ===== PANTALLA 1: MENÚ PRINCIPAL (TODOS LOS CUADROS DEL MISMO TAMAÑO) ===== */
   if (activeView === "menu") {
-    const readyModules = MODULES.filter((m) => m.ready);
-    const lockedModules = MODULES.filter((m) => !m.ready);
-
-   const progressByModule = {
+    const progressByModule = {
       verbs: {
         label: activeVerbModeInfo.shortLabel,
         approved: approvedVerbIds.length,
@@ -175,61 +229,63 @@ export default function App() {
         </header>
 
         <section className="menu-content">
-          {/* Módulos disponibles (Verbos, Animales y Familia) */}
-          <div className="featured-grid">
-            {readyModules.map((mod) => {
+          <div className="modules-grid">
+            {MODULES.map((mod) => {
               const stats = progressByModule[mod.id];
+              const isReady = Boolean(mod.ready && stats);
+
               return (
                 <button
                   key={mod.id}
                   type="button"
-                  className="module-card module-card-featured"
+                  className={`module-card ${
+                    isReady ? "module-card-ready" : "module-card-locked"
+                  }`}
                   onClick={() => handleSelectModule(mod)}
                 >
                   <div className="module-card-top">
-                    <span className="module-icon-md">{mod.emoji}</span>
-                    <span className="pill pill-ready">Disponible</span>
+                    <span className="module-icon">{mod.emoji}</span>
+                    <span
+                      className={`pill ${isReady ? "pill-ready" : "pill-soon"}`}
+                    >
+                      {isReady ? "Disponible" : "Pronto"}
+                    </span>
                   </div>
+
                   <div className="module-info">
                     <h2>{mod.title}</h2>
                     <p>{mod.description}</p>
                   </div>
-                  <div className="module-progress-wrap">
-                    <div className="module-progress-text">
-                      <span>{stats.label}</span>
-                      <strong>
-                        {stats.approved} / {stats.total}
-                      </strong>
-                    </div>
-                    <div className="progress-track">
-                      <div
-                        className="progress-fill"
-                        style={{ width: `${stats.percent}%` }}
-                      />
-                    </div>
+
+                  <div className="module-footer">
+                    {isReady ? (
+                      <>
+                        <div className="module-progress-text">
+                          <span>{stats.label}</span>
+                          <strong>
+                            {stats.approved} / {stats.total}
+                          </strong>
+                        </div>
+                        <div className="progress-track">
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${stats.percent}%` }}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="module-progress-text module-locked-text">
+                          <span>En construcción</span>
+                          <strong>—</strong>
+                        </div>
+                        <div className="progress-track progress-track-locked" />
+                      </>
+                    )}
                   </div>
                 </button>
               );
             })}
-          </div>
-
-          {/* Próximos módulos */}
-          <div className="modules-grid">
-            {lockedModules.map((mod) => (
-              <button
-                key={mod.id}
-                type="button"
-                className="module-card module-card-locked"
-                onClick={() => handleSelectModule(mod)}
-              >
-                <div className="module-card-top">
-                  <span className="module-icon">{mod.emoji}</span>
-                  <span className="pill pill-soon">Pronto</span>
-                </div>
-                <h3>{mod.title}</h3>
-                <p>{mod.description}</p>
-              </button>
-            ))}
           </div>
         </section>
 
@@ -270,15 +326,11 @@ export default function App() {
     const isCurrentApproved = approvedVerbIds.includes(currentVerb.id);
 
     return (
-      <main className="app-shell">
+      <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
         <header className="top-bar">
           <div className="title-row">
             <div className="title-left">
-              <button
-                type="button"
-                className="btn-back"
-                onClick={() => setActiveView("menu")}
-              >
+              <button type="button" className="btn-back" onClick={goToMenu}>
                 ← Menú
               </button>
               <h1>Verbos</h1>
@@ -354,7 +406,8 @@ export default function App() {
             verb={currentVerb}
             mode={verbMode}
             isApproved={isCurrentApproved}
-            onApprove={(id) =>
+            onApprove={(id) => {
+              document.activeElement?.blur();
               setApprovedVerbsByMode((prev) => {
                 const currentList = prev[verbMode] || [];
                 if (currentList.includes(id)) return prev;
@@ -362,8 +415,8 @@ export default function App() {
                   ...prev,
                   [verbMode]: [...currentList, id],
                 };
-              })
-            }
+              });
+            }}
           />
 
           <div className="nav-controls">
@@ -424,15 +477,11 @@ export default function App() {
     const isAnimalApproved = approvedAnimalIds.includes(currentAnimal.id);
 
     return (
-      <main className="app-shell">
+      <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
         <header className="top-bar">
           <div className="title-row">
             <div className="title-left">
-              <button
-                type="button"
-                className="btn-back"
-                onClick={() => setActiveView("menu")}
-              >
+              <button type="button" className="btn-back" onClick={goToMenu}>
                 ← Menú
               </button>
               <h1>Animales</h1>
@@ -476,11 +525,12 @@ export default function App() {
             isApproved={isAnimalApproved}
             inputLabel="Animal en inglés"
             placeholder="Escribe el nombre del animal..."
-            onApprove={(id) =>
+            onApprove={(id) => {
+              document.activeElement?.blur();
               setApprovedAnimalIds((prev) =>
                 prev.includes(id) ? prev : [...prev, id]
-              )
-            }
+              );
+            }}
           />
 
           <div className="nav-controls">
@@ -540,15 +590,11 @@ export default function App() {
   const isFamilyApproved = approvedFamilyIds.includes(currentMember.id);
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
       <header className="top-bar">
         <div className="title-row">
           <div className="title-left">
-            <button
-              type="button"
-              className="btn-back"
-              onClick={() => setActiveView("menu")}
-            >
+            <button type="button" className="btn-back" onClick={goToMenu}>
               ← Menú
             </button>
             <h1>Familia</h1>
@@ -592,11 +638,12 @@ export default function App() {
           isApproved={isFamilyApproved}
           inputLabel="Miembro en inglés"
           placeholder="Escribe el miembro de la familia..."
-          onApprove={(id) =>
+          onApprove={(id) => {
+            document.activeElement?.blur();
             setApprovedFamilyIds((prev) =>
               prev.includes(id) ? prev : [...prev, id]
-            )
-          }
+            );
+          }}
         />
 
         <div className="nav-controls">
