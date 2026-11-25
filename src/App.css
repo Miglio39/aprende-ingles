@@ -10,6 +10,7 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  overflow-x: hidden;
 }
 
 body {
@@ -17,28 +18,32 @@ body {
   color: #0f172a;
 }
 
-/* Contenedor ajustado exactamente a 1 pantalla (sin scroll) */
+/* Contenedor principal responsive (1 pantalla sin recortes) */
 .app-shell {
   height: 100dvh;
   width: 100%;
   max-width: 460px;
   margin: 0 auto;
-  padding: 0.7rem 0.9rem 0.85rem;
+  padding: 0.65rem 0.85rem max(0.75rem, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.55rem;
+  overflow-x: hidden;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* ===== ESTILOS DEL MENÚ PRINCIPAL ===== */
+/* ===== MENÚ PRINCIPAL ===== */
 .menu-shell {
-  justify-content: center;
-  gap: 0.9rem;
+  justify-content: flex-start;
+  gap: 0.85rem;
+  padding-top: max(0.85rem, env(safe-area-inset-top));
 }
 
 .menu-header {
   text-align: center;
   flex-shrink: 0;
+  margin-top: auto;
 }
 
 .app-tag {
@@ -54,35 +59,42 @@ body {
 
 .menu-header h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   line-height: 1.2;
 }
 
 .menu-header p {
   margin: 0.25rem 0 0;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: #475569;
 }
 
 .menu-content {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.7rem;
+  margin-bottom: auto;
 }
 
 .featured-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+/* Si hay número impar de módulos activos (ej. 3), el último ocupa todo el ancho */
+.featured-grid > .module-card:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .module-card {
   width: 100%;
+  min-width: 0;
   text-align: left;
   background: #ffffff;
   border: 2px solid #e2e8f0;
   border-radius: 18px;
-  padding: 0.9rem 1rem;
+  padding: 0.85rem 0.9rem;
   cursor: pointer;
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
   transition: transform 0.18s ease, border-color 0.2s ease,
@@ -99,11 +111,11 @@ body {
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .module-icon-md {
-  font-size: 1.7rem;
+  font-size: 1.65rem;
   line-height: 1;
 }
 
@@ -114,13 +126,13 @@ body {
 
 .module-info h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: #0f172a;
 }
 
 .module-info p {
-  margin: 0.2rem 0 0;
-  font-size: 0.8rem;
+  margin: 0.18rem 0 0;
+  font-size: 0.78rem;
   color: #475569;
   line-height: 1.3;
 }
@@ -128,28 +140,30 @@ body {
 .module-progress-wrap {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.28rem;
 }
 
 .module-progress-text {
   display: flex;
   justify-content: space-between;
-  font-size: 0.78rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.4rem;
+  font-size: 0.75rem;
   color: #475569;
 }
 
-/* Cuadrícula de los 6 módulos próximos */
 .modules-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
 }
 
 .module-card-locked {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  padding: 0.8rem 0.85rem;
+  gap: 0.28rem;
+  padding: 0.75rem 0.8rem;
   background: #ffffff;
 }
 
@@ -161,33 +175,35 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.15rem;
+  gap: 0.35rem;
+  margin-bottom: 0.1rem;
 }
 
 .module-icon {
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   line-height: 1;
 }
 
 .module-card-locked h3 {
   margin: 0;
-  font-size: 0.96rem;
+  font-size: 0.94rem;
   color: #0f172a;
 }
 
 .module-card-locked p {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: #64748b;
   line-height: 1.3;
 }
 
-/* Etiquetas Disponible / Pronto */
+/* Etiquetas */
 .pill {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 0.18rem 0.55rem;
+  padding: 0.16rem 0.5rem;
   border-radius: 999px;
+  white-space: nowrap;
 }
 
 .pill-ready {
@@ -249,7 +265,7 @@ body {
   margin-top: 0.45rem;
 }
 
-/* ===== ESTILOS DE LOS MÓDULOS DE TARJETAS ===== */
+/* ===== ENCABEZADO DE MÓDULOS ===== */
 .top-bar {
   flex-shrink: 0;
   display: flex;
@@ -261,30 +277,35 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .title-left {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .title-row h1 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn-back {
   border: 1.5px solid #cbd5e1;
   background: #ffffff;
   color: #0f172a;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  padding: 0.36rem 0.72rem;
+  padding: 0.34rem 0.68rem;
   border-radius: 10px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .btn-back:hover {
@@ -292,10 +313,57 @@ body {
   border-color: #94a3b8;
 }
 
+/* Selector de tiempo verbal adaptable a celular */
+.verb-mode-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0.22rem;
+  width: 100%;
+  background: #e2e8f0;
+  padding: 0.22rem;
+  border-radius: 10px;
+  margin: 0.15rem 0 0.1rem;
+}
+
+.verb-mode-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #334155;
+  font-size: clamp(0.72rem, 3.1vw, 0.82rem);
+  font-weight: 700;
+  padding: 0.38rem 0.3rem;
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1.15;
+  transition: background-color 0.18s ease, color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.verb-mode-btn:hover {
+  color: #0f172a;
+}
+
+.verb-mode-btn.is-active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.28);
+}
+
+.verb-mode-btn.is-complete:not(.is-active) {
+  color: #15803d;
+  background: #dcfce7;
+}
+
 .progress-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 0.84rem;
+  gap: 0.5rem;
+  font-size: 0.82rem;
   color: #475569;
 }
 
@@ -314,20 +382,22 @@ body {
   transition: width 0.35s ease;
 }
 
-/* Escenario principal */
+/* ===== ESCENARIO PRINCIPAL ===== */
 .stage {
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.65rem;
+  justify-content: flex-start;
+  gap: 0.55rem;
 }
 
-/* Tarjeta 3D con altura automática (mismo tamaño de imagen en ambos módulos) */
+/* Tarjeta 3D con altura automática */
 .card-scene {
   width: 100%;
+  margin-top: auto;
+  margin-bottom: auto;
   perspective: 1200px;
 }
 
@@ -345,12 +415,13 @@ body {
 .card-face {
   grid-area: 1 / 1;
   position: relative;
+  min-width: 0;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   background: #ffffff;
   border: 2px solid #e2e8f0;
   border-radius: 20px;
-  padding: 0.85rem 1rem;
+  padding: 0.8rem 0.9rem;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
@@ -359,7 +430,7 @@ body {
   transform: rotateY(0deg);
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.55rem;
 }
 
 .card-inner.is-flipped .card-front {
@@ -378,23 +449,22 @@ body {
   pointer-events: none;
 }
 
-/* Estado verde de aprobado */
 .card-face.approved {
   background: #dcfce7;
   border-color: #16a34a;
 }
 
-/* Bloque de imagen: mismo tamaño en Verbos y Animales, cubriendo todo el recuadro */
+/* Bloque de imagen: mismo tamaño y cubre todo el recuadro */
 .card-media {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
 .image-box {
   position: relative;
   width: 100%;
-  height: clamp(170px, 33dvh, 265px);
+  height: clamp(145px, 27dvh, 245px);
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
@@ -435,7 +505,7 @@ body {
 }
 
 .image-placeholder {
-  font-size: 4rem;
+  font-size: 3.8rem;
   user-select: none;
 }
 
@@ -446,7 +516,7 @@ body {
   background: #16a34a;
   color: #ffffff;
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   padding: 4px 10px;
   border-radius: 999px;
 }
@@ -460,45 +530,49 @@ body {
 }
 
 .verb-spanish {
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   color: #0f172a;
+  min-width: 0;
 }
 
 .btn-flip-hint {
   border: 1px solid #cbd5e1;
   background: #f8fafc;
   color: #334155;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
-  padding: 0.28rem 0.65rem;
+  padding: 0.26rem 0.62rem;
   border-radius: 999px;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-flip-hint:hover {
   background: #e2e8f0;
 }
 
-/* Formulario compacto */
+/* Formulario */
 .verb-form {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.42rem;
 }
 
 .verb-form label {
   display: flex;
   flex-direction: column;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #334155;
-  gap: 0.16rem;
+  gap: 0.14rem;
 }
 
+/* 16px evita zoom automático en iOS Safari */
 .verb-form input {
   width: 100%;
-  padding: 0.42rem 0.7rem;
+  padding: 0.4rem 0.7rem;
   border: 1.5px solid #cbd5e1;
   border-radius: 9px;
   font-size: 16px;
@@ -524,14 +598,14 @@ body {
 }
 
 .approved-banner {
-  margin-top: 0.2rem;
+  margin-top: 0.15rem;
   text-align: center;
   background: #16a34a;
   color: #ffffff;
   font-weight: 700;
-  padding: 0.6rem;
+  padding: 0.56rem;
   border-radius: 10px;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
 }
 
 /* Parte trasera */
@@ -539,7 +613,7 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .back-header {
@@ -547,9 +621,9 @@ body {
 }
 
 .back-emoji {
-  font-size: 2.3rem;
+  font-size: 2.1rem;
   display: block;
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.1rem;
 }
 
 .category-pill {
@@ -560,54 +634,74 @@ body {
   font-weight: 700;
   padding: 0.2rem 0.65rem;
   border-radius: 999px;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.3rem;
 }
 
 .card-back h3 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
 }
 
 .back-subtitle {
-  margin: 0.2rem 0 0;
+  margin: 0.18rem 0 0;
   color: #64748b;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
+}
+
+.back-context-pill {
+  display: inline-block;
+  margin-top: 0.38rem;
+  padding: 0.2rem 0.68rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 0.8rem;
+}
+
+.back-context-pill strong {
+  color: #0f172a;
 }
 
 .answers-list {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .answer-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid #cbd5e1;
-  padding: 0.75rem 1rem;
+  padding: 0.68rem 0.85rem;
   border-radius: 10px;
 }
 
 .answer-row span {
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   color: #475569;
+  flex-shrink: 0;
 }
 
 .answer-row strong {
-  font-size: 1.12rem;
+  font-size: 1.05rem;
   color: #0f172a;
+  text-align: right;
+  word-break: break-word;
 }
 
 .answer-row-single strong {
-  font-size: 1.35rem;
+  font-size: 1.28rem;
 }
 
 .answer-value {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
 /* Botones de pronunciación */
@@ -637,16 +731,16 @@ body {
 .back-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .btn-speak-all {
-  height: 42px;
+  height: 40px;
   border: 1.5px solid #2563eb;
   border-radius: 10px;
   background: #eff6ff;
   color: #1d4ed8;
-  font-size: 0.94rem;
+  font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.12s ease;
@@ -673,7 +767,7 @@ body {
 }
 
 .btn-check {
-  margin-top: 0.2rem;
+  margin-top: 0.15rem;
   height: 42px;
   background: #2563eb;
   color: #ffffff;
@@ -685,17 +779,18 @@ body {
 }
 
 .btn-flip-back {
-  height: 44px;
+  height: 42px;
   background: #0f172a;
   color: #ffffff;
-  font-size: 0.96rem;
+  font-size: 0.94rem;
 }
 
 .btn-reset {
-  padding: 0.38rem 0.8rem;
+  padding: 0.36rem 0.75rem;
   background: #e2e8f0;
   color: #0f172a;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
 .btn-reset:hover {
@@ -708,7 +803,7 @@ body {
   width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.65rem;
+  gap: 0.6rem;
 }
 
 .btn-nav {
@@ -788,12 +883,91 @@ body {
   color: #ffffff;
 }
 
-/* Escritorio */
+/* ===== AJUSTES RESPONSIVE PARA CELULARES ===== */
+
+/* Pantallas con poco alto (celulares con barra de navegador abierta) */
+@media (max-height: 780px) {
+  .app-shell {
+    padding: 0.5rem 0.75rem max(0.6rem, env(safe-area-inset-bottom));
+    gap: 0.42rem;
+  }
+
+  .top-bar {
+    gap: 0.28rem;
+  }
+
+  .stage {
+    gap: 0.45rem;
+  }
+
+  .card-face {
+    padding: 0.68rem 0.8rem;
+    border-radius: 18px;
+  }
+
+  .card-front {
+    gap: 0.42rem;
+  }
+
+  .image-box {
+    height: clamp(122px, 22dvh, 185px);
+  }
+
+  .verb-form {
+    gap: 0.34rem;
+  }
+
+  .verb-form input {
+    padding: 0.34rem 0.65rem;
+  }
+
+  .btn-check,
+  .btn-nav,
+  .btn-flip-back {
+    height: 38px;
+  }
+
+  .dot-item {
+    height: 28px;
+  }
+}
+
+/* Celulares muy compactos en altura (ej. iPhone SE / Android pequeños) */
+@media (max-height: 670px) {
+  .image-box {
+    height: 112px;
+  }
+
+  .verb-mode-btn {
+    min-height: 30px;
+    padding: 0.28rem 0.2rem;
+  }
+
+  .verb-spanish {
+    font-size: 0.96rem;
+  }
+}
+
+/* Celulares muy angostos (< 360px): selector en 2x2 para cero cortes */
+@media (max-width: 359px) {
+  .verb-mode-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.22rem;
+  }
+
+  .featured-grid,
+  .modules-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== ESCRITORIO ===== */
 @media (min-width: 768px) {
   .app-shell {
     max-width: 480px;
     padding: 0.9rem 1rem 1rem;
-    gap: 0.75rem;
+    gap: 0.7rem;
   }
 
   .menu-shell {
@@ -807,6 +981,10 @@ body {
   .card-face {
     padding: 1rem 1.2rem;
     border-radius: 22px;
+  }
+
+  .image-box {
+    height: clamp(170px, 30dvh, 250px);
   }
 
   .dots-strip {
@@ -832,64 +1010,4 @@ body {
     height: 28px;
     font-size: 0.72rem;
   }
-}
-
-/* Evita huecos vacíos en el menú cuando una fila tiene número impar de tarjetas */
-.featured-grid .module-card:last-child:nth-child(odd),
-.modules-grid .module-card:last-child:nth-child(odd) {
-  grid-column: 1 / -1;
-}
-
-/* Selector de tiempo verbal en el módulo de Verbos */
-.verb-mode-bar {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.3rem;
-  background: #e2e8f0;
-  padding: 0.25rem;
-  border-radius: 10px;
-  margin: 0.45rem 0 0.5rem;
-}
-
-.verb-mode-btn {
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: #334155;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 0.42rem 0.25rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.verb-mode-btn:hover {
-  color: #0f172a;
-}
-
-.verb-mode-btn.is-active {
-  background: #2563eb;
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.28);
-}
-
-.verb-mode-btn.is-complete:not(.is-active) {
-  color: #15803d;
-  background: #dcfce7;
-}
-
-/* Referencia del infinitivo al estudiar solo pasado o participio */
-.back-context-pill {
-  display: inline-block;
-  margin-top: 0.4rem;
-  padding: 0.22rem 0.7rem;
-  border-radius: 999px;
-  background: #e2e8f0;
-  color: #334155;
-  font-size: 0.82rem;
-}
-
-.back-context-pill strong {
-  color: #0f172a;
 }

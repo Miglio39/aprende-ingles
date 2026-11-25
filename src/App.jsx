@@ -145,9 +145,9 @@ export default function App() {
     const readyModules = MODULES.filter((m) => m.ready);
     const lockedModules = MODULES.filter((m) => !m.ready);
 
-    const progressByModule = {
+   const progressByModule = {
       verbs: {
-        label: `Progreso (${activeVerbModeInfo.shortLabel})`,
+        label: activeVerbModeInfo.shortLabel,
         approved: approvedVerbIds.length,
         total: VERBS.length,
         percent: verbsProgress,
