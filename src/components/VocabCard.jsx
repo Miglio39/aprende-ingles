@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { speakEnglish, stopSpeech } from "../utils/speech";
+import { playErrorSound, playSuccessSound } from "../utils/sounds";
 
 const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g, " ");
 
@@ -15,14 +16,14 @@ export default function VocabCard({
   item,
   isApproved,
   onApprove,
-  inputLabel = "En inglés",
+  inputLabel = "Nombre en inglés",
   placeholder = "Escribe en inglés...",
 }) {
   const imgRef = useRef(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [answer, setAnswer] = useState(isApproved && item ? item.english : "");
+  const [answer, setAnswer] = useState(isApproved ? item.english : "");
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -31,8 +32,6 @@ export default function VocabCard({
     }
     return () => stopSpeech();
   }, []);
-
-  if (!item) return null;
 
   const handleOpenBack = () => {
     document.activeElement?.blur();
@@ -55,8 +54,11 @@ export default function VocabCard({
     setHasError(!ok);
 
     if (ok) {
+      playSuccessSound();
       document.activeElement?.blur();
       onApprove(item.id);
+    } else {
+      playErrorSound();
     }
   };
 
@@ -102,18 +104,14 @@ export default function VocabCard({
                 className="btn-flip-hint"
                 onClick={handleOpenBack}
               >
-                Girar ↻
+                Girar tarjeta ↻
               </button>
             </div>
           </div>
 
           <form className="verb-form" onSubmit={handleSubmit}>
-            <label
-              className={`field-row ${hasError ? "is-error" : ""} ${
-                isApproved ? "is-approved" : ""
-              }`}
-            >
-              <span className="field-tag">{inputLabel}</span>
+            <label>
+              {inputLabel}
               <input
                 type="text"
                 autoComplete="off"
@@ -123,6 +121,7 @@ export default function VocabCard({
                 enterKeyHint="done"
                 value={answer}
                 disabled={isApproved}
+                className={hasError ? "input-error" : ""}
                 placeholder={placeholder}
                 onChange={(e) => {
                   setAnswer(e.target.value);

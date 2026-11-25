@@ -5,6 +5,9 @@ import { ANIMALS } from "./data/animals";
 import { FAMILY } from "./data/family";
 import VerbCard from "./components/VerbCard";
 import VocabCard from "./components/VocabCard";
+import InstallPrompt from "./components/InstallPrompt";
+import { usePwaInstall } from "./hooks/usePwaInstall";
+import { isSfxEnabled, playNextSound, setSfxEnabled } from "./utils/sounds";
 import "./App.css";
 
 const LEGACY_VERBS_STORAGE_KEY = "aprende_ingles_approved_verbs";
@@ -30,6 +33,12 @@ const DEFAULT_VERBS_PROGRESS = {
 export default function App() {
   const [activeView, setActiveView] = useState("menu");
   const [comingSoonModule, setComingSoonModule] = useState(null);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [sfxOn, setSfxOn] = useState(isSfxEnabled);
+
+  const { isInstalled, isIos, canPromptInstall, promptInstall } =
+    usePwaInstall();
 
   // Estado módulo Verbos (con modo de práctica independiente)
   const [verbMode, setVerbMode] = useState(() => {
@@ -67,18 +76,9 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Ajusta el alto visible real encima del teclado y centra el campo activo sin ocultar nada
+  // Detecta teclado móvil y ajusta la altura real visible (Android e iOS)
   useEffect(() => {
-    let scrollTimer;
-
-    const scrollActiveInput = (el) => {
-      if (!el || el.tagName !== "INPUT") return;
-      if (window.innerWidth > 767) return;
-      clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(() => {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 240);
-    };
+    let blurTimer;
 
     const syncViewport = () => {
       const vv = window.visualViewport;
@@ -87,26 +87,38 @@ export default function App() {
       if (vv && vv.offsetTop > 0) {
         window.scrollTo(0, 0);
       }
-      if (document.activeElement?.tagName === "INPUT") {
-        scrollActiveInput(document.activeElement);
-      }
     };
 
     const handleFocusIn = (e) => {
-      if (e.target.tagName === "INPUT") {
-        scrollActiveInput(e.target);
-      }
+      if (e.target.tagName !== "INPUT") return;
+      if (window.innerWidth > 767) return;
+      clearTimeout(blurTimer);
+      setIsTyping(true);
+      syncViewport();
+    };
+
+    const handleFocusOut = (e) => {
+      if (e.target.tagName !== "INPUT") return;
+      clearTimeout(blurTimer);
+      blurTimer = setTimeout(() => {
+        if (document.activeElement?.tagName !== "INPUT") {
+          setIsTyping(false);
+          syncViewport();
+        }
+      }, 120);
     };
 
     syncViewport();
     document.addEventListener("focusin", handleFocusIn);
+    document.addEventListener("focusout", handleFocusOut);
     window.addEventListener("resize", syncViewport);
     window.visualViewport?.addEventListener("resize", syncViewport);
     window.visualViewport?.addEventListener("scroll", syncViewport);
 
     return () => {
-      clearTimeout(scrollTimer);
+      clearTimeout(blurTimer);
       document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("focusout", handleFocusOut);
       window.removeEventListener("resize", syncViewport);
       window.visualViewport?.removeEventListener("resize", syncViewport);
       window.visualViewport?.removeEventListener("scroll", syncViewport);
@@ -177,20 +189,45 @@ export default function App() {
     (approvedFamilyIds.length / FAMILY.length) * 100
   );
 
+  const toggleSfx = () => {
+    const next = !sfxOn;
+    setSfxOn(next);
+    setSfxEnabled(next);
+    if (next) playNextSound();
+  };
+
+  const handleInstallClick = async () => {
+    if (canPromptInstall) {
+      const result = await promptInstall();
+      if (result === "manual") setShowInstallModal(true);
+    } else {
+      setShowInstallModal(true);
+    }
+  };
+
   const goToMenu = () => {
     document.activeElement?.blur();
+    setIsTyping(false);
     setActiveView("menu");
   };
 
   const handleSelectModule = (mod) => {
     if (mod.ready) {
+      playNextSound();
+      setIsTyping(false);
       setActiveView(mod.id);
     } else {
       setComingSoonModule(mod);
     }
   };
 
-  /* ===== PANTALLA 1: MENÚ PRINCIPAL (CUADROS DEL MISMO TAMAÑO) ===== */
+  const navigateCard = (setter, nextIndex, currentIndex) => {
+    if (nextIndex === currentIndex) return;
+    playNextSound();
+    setter(nextIndex);
+  };
+
+  /* ===== PANTALLA 1: MENÚ PRINCIPAL ===== */
   if (activeView === "menu") {
     const progressByModule = {
       verbs: {
@@ -216,7 +253,35 @@ export default function App() {
     return (
       <main className="app-shell menu-shell">
         <header className="menu-header">
-          <span className="app-tag">Aprende Inglés</span>
+          <div className="menu-top-bar">
+            <span className="app-tag">Aprende Inglés</span>
+            <div className="menu-top-actions">
+              <button
+                type="button"
+                className={`btn-sfx-toggle ${sfxOn ? "is-on" : ""}`}
+                onClick={toggleSfx}
+                title={
+                  sfxOn
+                    ? "Silenciar efectos de sonido"
+                    : "Activar efectos de sonido"
+                }
+                aria-label={sfxOn ? "Silenciar sonidos" : "Activar sonidos"}
+              >
+                {sfxOn ? "🔔" : "🔕"}
+              </button>
+
+              {!isInstalled && (
+                <button
+                  type="button"
+                  className="btn-install-app"
+                  onClick={handleInstallClick}
+                >
+                  📲 Instalar app
+                </button>
+              )}
+            </div>
+          </div>
+
           <h1>Elige una actividad</h1>
           <p>Practica paso a paso a tu ritmo.</p>
         </header>
@@ -282,6 +347,63 @@ export default function App() {
           </div>
         </section>
 
+        {/* Modal: Instalar como App Móvil */}
+        {showInstallModal && (
+          <div
+            className="modal-backdrop"
+            onClick={() => setShowInstallModal(false)}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+              <img
+                src="/icon-192.png"
+                alt="Logotipo Aprende Inglés"
+                className="modal-logo"
+              />
+              <span className="pill pill-ready">App Móvil</span>
+              <h2>Instalar Aprende Inglés</h2>
+              {isIos ? (
+                <ol className="install-steps">
+                  <li>
+                    Toca el botón <strong>Compartir</strong> (cuadrado con flecha
+                    hacia arriba) en la barra de Safari.
+                  </li>
+                  <li>
+                    Desliza hacia abajo y selecciona{" "}
+                    <strong>Agregar a inicio</strong>.
+                  </li>
+                  <li>
+                    Toca <strong>Agregar</strong> arriba a la derecha y listo.
+                  </li>
+                </ol>
+              ) : (
+                <ol className="install-steps">
+                  <li>
+                    Toca el menú del navegador (<strong>⋮</strong>) arriba a la
+                    derecha.
+                  </li>
+                  <li>
+                    Selecciona <strong>Instalar aplicación</strong> o{" "}
+                    <strong>Añadir a la pantalla de inicio</strong>.
+                  </li>
+                  <li>
+                    Confirma en <strong>Instalar</strong> para abrirla desde tu
+                    celular con su logotipo.
+                  </li>
+                </ol>
+              )}
+              <button
+                type="button"
+                className="btn-check modal-btn"
+                onClick={() => setShowInstallModal(false)}
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Modal: Módulo en construcción */}
         {comingSoonModule && (
           <div
@@ -309,6 +431,13 @@ export default function App() {
             </div>
           </div>
         )}
+
+        <InstallPrompt
+          isInstalled={isInstalled}
+          isIos={isIos}
+          canPromptInstall={canPromptInstall}
+          onInstall={handleInstallClick}
+        />
       </main>
     );
   }
@@ -319,7 +448,7 @@ export default function App() {
     const isCurrentApproved = approvedVerbIds.includes(currentVerb.id);
 
     return (
-      <main className="app-shell">
+      <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
         <header className="top-bar">
           <div className="title-row">
             <div className="title-left">
@@ -328,24 +457,34 @@ export default function App() {
               </button>
               <h1>Verbos</h1>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setApprovedVerbsByMode((prev) => ({
-                  ...prev,
-                  [verbMode]: [],
-                }));
-                if (verbMode === "all") {
-                  localStorage.removeItem(LEGACY_VERBS_STORAGE_KEY);
-                }
-                setVerbIndex(0);
-                setVerbResetKey((prev) => prev + 1);
-              }}
-              className="btn-reset"
-              title={`Reiniciar solo ${activeVerbModeInfo.label}`}
-            >
-              Reiniciar
-            </button>
+            <div className="title-actions">
+              <button
+                type="button"
+                className={`btn-sfx-toggle ${sfxOn ? "is-on" : ""}`}
+                onClick={toggleSfx}
+                title={sfxOn ? "Silenciar sonidos" : "Activar sonidos"}
+              >
+                {sfxOn ? "🔔" : "🔕"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setApprovedVerbsByMode((prev) => ({
+                    ...prev,
+                    [verbMode]: [],
+                  }));
+                  if (verbMode === "all") {
+                    localStorage.removeItem(LEGACY_VERBS_STORAGE_KEY);
+                  }
+                  setVerbIndex(0);
+                  setVerbResetKey((prev) => prev + 1);
+                }}
+                className="btn-reset"
+                title={`Reiniciar solo ${activeVerbModeInfo.label}`}
+              >
+                Reiniciar
+              </button>
+            </div>
           </div>
 
           <div
@@ -366,7 +505,10 @@ export default function App() {
                   className={`verb-mode-btn ${isActive ? "is-active" : ""} ${
                     modeDone ? "is-complete" : ""
                   }`}
-                  onClick={() => setVerbMode(m.id)}
+                  onClick={() => {
+                    playNextSound();
+                    setVerbMode(m.id);
+                  }}
                 >
                   {m.shortLabel}
                 </button>
@@ -416,7 +558,7 @@ export default function App() {
               type="button"
               className="btn-nav"
               onClick={() =>
-                setVerbIndex((prev) => (prev > 0 ? prev - 1 : prev))
+                navigateCard(setVerbIndex, Math.max(0, verbIndex - 1), verbIndex)
               }
               disabled={verbIndex === 0}
             >
@@ -429,8 +571,10 @@ export default function App() {
                 isCurrentApproved ? "btn-nav-highlight" : ""
               }`}
               onClick={() =>
-                setVerbIndex((prev) =>
-                  prev < VERBS.length - 1 ? prev + 1 : prev
+                navigateCard(
+                  setVerbIndex,
+                  Math.min(VERBS.length - 1, verbIndex + 1),
+                  verbIndex
                 )
               }
               disabled={verbIndex === VERBS.length - 1}
@@ -450,7 +594,7 @@ export default function App() {
                   className={`dot-item ${active ? "is-active" : ""} ${
                     approved ? "is-approved" : ""
                   }`}
-                  onClick={() => setVerbIndex(index)}
+                  onClick={() => navigateCard(setVerbIndex, index, verbIndex)}
                   title={`${index + 1}. ${verb.spanish}`}
                 >
                   {index + 1}
@@ -469,7 +613,7 @@ export default function App() {
     const isAnimalApproved = approvedAnimalIds.includes(currentAnimal.id);
 
     return (
-      <main className="app-shell">
+      <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
         <header className="top-bar">
           <div className="title-row">
             <div className="title-left">
@@ -478,18 +622,28 @@ export default function App() {
               </button>
               <h1>Animales</h1>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setApprovedAnimalIds([]);
-                localStorage.removeItem(ANIMALS_STORAGE_KEY);
-                setAnimalIndex(0);
-                setAnimalResetKey((prev) => prev + 1);
-              }}
-              className="btn-reset"
-            >
-              Reiniciar
-            </button>
+            <div className="title-actions">
+              <button
+                type="button"
+                className={`btn-sfx-toggle ${sfxOn ? "is-on" : ""}`}
+                onClick={toggleSfx}
+                title={sfxOn ? "Silenciar sonidos" : "Activar sonidos"}
+              >
+                {sfxOn ? "🔔" : "🔕"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setApprovedAnimalIds([]);
+                  localStorage.removeItem(ANIMALS_STORAGE_KEY);
+                  setAnimalIndex(0);
+                  setAnimalResetKey((prev) => prev + 1);
+                }}
+                className="btn-reset"
+              >
+                Reiniciar
+              </button>
+            </div>
           </div>
 
           <div className="progress-meta">
@@ -515,8 +669,8 @@ export default function App() {
             key={`${currentAnimal.id}-${animalResetKey}`}
             item={currentAnimal}
             isApproved={isAnimalApproved}
-            inputLabel="En inglés"
-            placeholder="Escribe el animal..."
+            inputLabel="Animal en inglés"
+            placeholder="Escribe el nombre del animal..."
             onApprove={(id) => {
               document.activeElement?.blur();
               setApprovedAnimalIds((prev) =>
@@ -530,7 +684,11 @@ export default function App() {
               type="button"
               className="btn-nav"
               onClick={() =>
-                setAnimalIndex((prev) => (prev > 0 ? prev - 1 : prev))
+                navigateCard(
+                  setAnimalIndex,
+                  Math.max(0, animalIndex - 1),
+                  animalIndex
+                )
               }
               disabled={animalIndex === 0}
             >
@@ -543,8 +701,10 @@ export default function App() {
                 isAnimalApproved ? "btn-nav-highlight" : ""
               }`}
               onClick={() =>
-                setAnimalIndex((prev) =>
-                  prev < ANIMALS.length - 1 ? prev + 1 : prev
+                navigateCard(
+                  setAnimalIndex,
+                  Math.min(ANIMALS.length - 1, animalIndex + 1),
+                  animalIndex
                 )
               }
               disabled={animalIndex === ANIMALS.length - 1}
@@ -564,7 +724,9 @@ export default function App() {
                   className={`dot-item ${active ? "is-active" : ""} ${
                     approved ? "is-approved" : ""
                   }`}
-                  onClick={() => setAnimalIndex(index)}
+                  onClick={() =>
+                    navigateCard(setAnimalIndex, index, animalIndex)
+                  }
                   title={`${index + 1}. ${animal.spanish}`}
                 >
                   {index + 1}
@@ -582,7 +744,7 @@ export default function App() {
   const isFamilyApproved = approvedFamilyIds.includes(currentMember.id);
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${isTyping ? "is-typing" : ""}`}>
       <header className="top-bar">
         <div className="title-row">
           <div className="title-left">
@@ -591,18 +753,28 @@ export default function App() {
             </button>
             <h1>Familia</h1>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setApprovedFamilyIds([]);
-              localStorage.removeItem(FAMILY_STORAGE_KEY);
-              setFamilyIndex(0);
-              setFamilyResetKey((prev) => prev + 1);
-            }}
-            className="btn-reset"
-          >
-            Reiniciar
-          </button>
+          <div className="title-actions">
+            <button
+              type="button"
+              className={`btn-sfx-toggle ${sfxOn ? "is-on" : ""}`}
+              onClick={toggleSfx}
+              title={sfxOn ? "Silenciar sonidos" : "Activar sonidos"}
+            >
+              {sfxOn ? "🔔" : "🔕"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setApprovedFamilyIds([]);
+                localStorage.removeItem(FAMILY_STORAGE_KEY);
+                setFamilyIndex(0);
+                setFamilyResetKey((prev) => prev + 1);
+              }}
+              className="btn-reset"
+            >
+              Reiniciar
+            </button>
+          </div>
         </div>
 
         <div className="progress-meta">
@@ -628,8 +800,8 @@ export default function App() {
           key={`${currentMember.id}-${familyResetKey}`}
           item={currentMember}
           isApproved={isFamilyApproved}
-          inputLabel="En inglés"
-          placeholder="Escribe el miembro..."
+          inputLabel="Miembro en inglés"
+          placeholder="Escribe el miembro de la familia..."
           onApprove={(id) => {
             document.activeElement?.blur();
             setApprovedFamilyIds((prev) =>
@@ -643,7 +815,11 @@ export default function App() {
             type="button"
             className="btn-nav"
             onClick={() =>
-              setFamilyIndex((prev) => (prev > 0 ? prev - 1 : prev))
+              navigateCard(
+                setFamilyIndex,
+                Math.max(0, familyIndex - 1),
+                familyIndex
+              )
             }
             disabled={familyIndex === 0}
           >
@@ -656,8 +832,10 @@ export default function App() {
               isFamilyApproved ? "btn-nav-highlight" : ""
             }`}
             onClick={() =>
-              setFamilyIndex((prev) =>
-                prev < FAMILY.length - 1 ? prev + 1 : prev
+              navigateCard(
+                setFamilyIndex,
+                Math.min(FAMILY.length - 1, familyIndex + 1),
+                familyIndex
               )
             }
             disabled={familyIndex === FAMILY.length - 1}
@@ -677,7 +855,9 @@ export default function App() {
                 className={`dot-item ${active ? "is-active" : ""} ${
                   approved ? "is-approved" : ""
                 }`}
-                onClick={() => setFamilyIndex(index)}
+                onClick={() =>
+                  navigateCard(setFamilyIndex, index, familyIndex)
+                }
                 title={`${index + 1}. ${member.spanish}`}
               >
                 {index + 1}

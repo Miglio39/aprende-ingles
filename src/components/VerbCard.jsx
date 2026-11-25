@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { speakEnglish, speakSequence, stopSpeech } from "../utils/speech";
+import { playErrorSound, playSuccessSound } from "../utils/sounds";
 
 const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g, " ");
 
@@ -15,8 +16,7 @@ const FIELD_CONFIG = {
   infinitive: {
     key: "infinitive",
     label: "Infinitivo",
-    shortLabel: "Infinitivo",
-    placeholder: "Escribe aquí...",
+    placeholder: "Escribe el infinitivo...",
     acceptedKey: "infinitiveAccepted",
     isPastOrParticiple: false,
     approvedText: "✓ ¡Excelente! Infinitivo dominado",
@@ -24,8 +24,7 @@ const FIELD_CONFIG = {
   past: {
     key: "past",
     label: "Pasado simple",
-    shortLabel: "P. simple",
-    placeholder: "Escribe aquí...",
+    placeholder: "Escribe el pasado simple...",
     acceptedKey: "pastAccepted",
     isPastOrParticiple: true,
     approvedText: "✓ ¡Excelente! Pasado simple dominado",
@@ -33,8 +32,7 @@ const FIELD_CONFIG = {
   participle: {
     key: "participle",
     label: "Pasado participio",
-    shortLabel: "Participio",
-    placeholder: "Escribe aquí...",
+    placeholder: "Escribe el pasado participio...",
     acceptedKey: "participleAccepted",
     isPastOrParticiple: true,
     approvedText: "✓ ¡Excelente! Participio dominado",
@@ -147,8 +145,11 @@ export default function VerbCard({
     setErrors(nextErrors);
 
     if (allValid) {
+      playSuccessSound();
       document.activeElement?.blur();
       onApprove(currentVerb.id);
+    } else {
+      playErrorSound();
     }
   };
 
@@ -198,7 +199,7 @@ export default function VerbCard({
                 className="btn-flip-hint"
                 onClick={handleOpenBack}
               >
-                Girar ↻
+                Girar tarjeta ↻
               </button>
             </div>
           </div>
@@ -207,13 +208,8 @@ export default function VerbCard({
             {activeFields.map((field, idx) => {
               const isLast = idx === activeFields.length - 1;
               return (
-                <label
-                  key={field.key}
-                  className={`field-row ${
-                    errors[field.key] ? "is-error" : ""
-                  } ${isApproved ? "is-approved" : ""}`}
-                >
-                  <span className="field-tag">{field.shortLabel}</span>
+                <label key={field.key}>
+                  {field.label}
                   <input
                     ref={(el) => {
                       inputRefs.current[idx] = el;
@@ -226,6 +222,7 @@ export default function VerbCard({
                     enterKeyHint={isLast ? "done" : "next"}
                     value={form[field.key]}
                     disabled={isApproved}
+                    className={errors[field.key] ? "input-error" : ""}
                     placeholder={field.placeholder}
                     onKeyDown={(e) => handleInputKeyDown(e, idx)}
                     onChange={(e) => handleChange(field.key, e.target.value)}
