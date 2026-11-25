@@ -7,20 +7,49 @@ import VerbCard from "./components/VerbCard";
 import VocabCard from "./components/VocabCard";
 import "./App.css";
 
-const VERBS_STORAGE_KEY = "aprende_ingles_approved_verbs";
+const LEGACY_VERBS_STORAGE_KEY = "aprende_ingles_approved_verbs";
+const VERBS_BY_MODE_STORAGE_KEY = "aprende_ingles_approved_verbs_by_mode";
+const VERB_MODE_STORAGE_KEY = "aprende_ingles_verb_mode";
 const ANIMALS_STORAGE_KEY = "aprende_ingles_approved_animals";
 const FAMILY_STORAGE_KEY = "aprende_ingles_approved_family";
+
+const VERB_MODES = [
+  { id: "infinitive", label: "Infinitivo", shortLabel: "Infinitivo" },
+  { id: "past", label: "Pasado simple", shortLabel: "P. simple" },
+  { id: "participle", label: "Pasado participio", shortLabel: "Participio" },
+  { id: "all", label: "Los 3 tiempos", shortLabel: "Los 3" },
+];
+
+const DEFAULT_VERBS_PROGRESS = {
+  infinitive: [],
+  past: [],
+  participle: [],
+  all: [],
+};
 
 export default function App() {
   const [activeView, setActiveView] = useState("menu");
   const [comingSoonModule, setComingSoonModule] = useState(null);
 
-  // Estado módulo Verbos
+  // Estado módulo Verbos (con modo de práctica independiente)
+  const [verbMode, setVerbMode] = useState(() => {
+    const saved = localStorage.getItem(VERB_MODE_STORAGE_KEY);
+    return VERB_MODES.some((m) => m.id === saved) ? saved : "all";
+  });
   const [verbIndex, setVerbIndex] = useState(0);
   const [verbResetKey, setVerbResetKey] = useState(0);
-  const [approvedVerbIds, setApprovedVerbIds] = useState(() => {
-    const saved = localStorage.getItem(VERBS_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+  const [approvedVerbsByMode, setApprovedVerbsByMode] = useState(() => {
+    const savedByMode = localStorage.getItem(VERBS_BY_MODE_STORAGE_KEY);
+    if (savedByMode) {
+      return { ...DEFAULT_VERBS_PROGRESS, ...JSON.parse(savedByMode) };
+    }
+
+    // Migra progreso anterior de Verbos al modo "Los 3 tiempos"
+    const legacySaved = localStorage.getItem(LEGACY_VERBS_STORAGE_KEY);
+    return {
+      ...DEFAULT_VERBS_PROGRESS,
+      all: legacySaved ? JSON.parse(legacySaved) : [],
+    };
   });
 
   // Estado módulo Animales
@@ -40,8 +69,15 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem(VERBS_STORAGE_KEY, JSON.stringify(approvedVerbIds));
-  }, [approvedVerbIds]);
+    localStorage.setItem(VERB_MODE_STORAGE_KEY, verbMode);
+  }, [verbMode]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      VERBS_BY_MODE_STORAGE_KEY,
+      JSON.stringify(approvedVerbsByMode)
+    );
+  }, [approvedVerbsByMode]);
 
   useEffect(() => {
     localStorage.setItem(
@@ -82,6 +118,10 @@ export default function App() {
     });
   }, [activeView, verbIndex, animalIndex, familyIndex]);
 
+  const approvedVerbIds = approvedVerbsByMode[verbMode] || [];
+  const activeVerbModeInfo =
+    VERB_MODES.find((m) => m.id === verbMode) || VERB_MODES[3];
+
   const verbsProgress = Math.round(
     (approvedVerbIds.length / VERBS.length) * 100
   );
@@ -107,16 +147,19 @@ export default function App() {
 
     const progressByModule = {
       verbs: {
+        label: `Progreso (${activeVerbModeInfo.shortLabel})`,
         approved: approvedVerbIds.length,
         total: VERBS.length,
         percent: verbsProgress,
       },
       animals: {
+        label: "Progreso",
         approved: approvedAnimalIds.length,
         total: ANIMALS.length,
         percent: animalsProgress,
       },
       family: {
+        label: "Progreso",
         approved: approvedFamilyIds.length,
         total: FAMILY.length,
         percent: familyProgress,
@@ -153,7 +196,7 @@ export default function App() {
                   </div>
                   <div className="module-progress-wrap">
                     <div className="module-progress-text">
-                      <span>Progreso</span>
+                      <span>{stats.label}</span>
                       <strong>
                         {stats.approved} / {stats.total}
                       </strong>
@@ -241,16 +284,50 @@ export default function App() {
               <h1>Verbos</h1>
             </div>
             <button
+              type="button"
               onClick={() => {
-                setApprovedVerbIds([]);
-                localStorage.removeItem(VERBS_STORAGE_KEY);
+                setApprovedVerbsByMode((prev) => ({
+                  ...prev,
+                  [verbMode]: [],
+                }));
+                if (verbMode === "all") {
+                  localStorage.removeItem(LEGACY_VERBS_STORAGE_KEY);
+                }
                 setVerbIndex(0);
                 setVerbResetKey((prev) => prev + 1);
               }}
               className="btn-reset"
+              title={`Reiniciar solo ${activeVerbModeInfo.label}`}
             >
               Reiniciar
             </button>
+          </div>
+
+          {/* Selector de tiempo verbal a practicar */}
+          <div
+            className="verb-mode-bar"
+            role="tablist"
+            aria-label="Elegir tiempo verbal a practicar"
+          >
+            {VERB_MODES.map((m) => {
+              const isActive = m.id === verbMode;
+              const modeDone =
+                (approvedVerbsByMode[m.id]?.length || 0) === VERBS.length;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`verb-mode-btn ${isActive ? "is-active" : ""} ${
+                    modeDone ? "is-complete" : ""
+                  }`}
+                  onClick={() => setVerbMode(m.id)}
+                >
+                  {m.shortLabel}
+                </button>
+              );
+            })}
           </div>
 
           <div className="progress-meta">
@@ -258,8 +335,8 @@ export default function App() {
               Tarjeta <strong>{verbIndex + 1}</strong> de {VERBS.length}
             </span>
             <span>
-              Aprobados: <strong>{approvedVerbIds.length}</strong> /{" "}
-              {VERBS.length}
+              {activeVerbModeInfo.shortLabel}:{" "}
+              <strong>{approvedVerbIds.length}</strong> / {VERBS.length}
             </span>
           </div>
 
@@ -273,13 +350,19 @@ export default function App() {
 
         <section className="stage">
           <VerbCard
-            key={`${currentVerb.id}-${verbResetKey}`}
+            key={`${currentVerb.id}-${verbMode}-${verbResetKey}`}
             verb={currentVerb}
+            mode={verbMode}
             isApproved={isCurrentApproved}
             onApprove={(id) =>
-              setApprovedVerbIds((prev) =>
-                prev.includes(id) ? prev : [...prev, id]
-              )
+              setApprovedVerbsByMode((prev) => {
+                const currentList = prev[verbMode] || [];
+                if (currentList.includes(id)) return prev;
+                return {
+                  ...prev,
+                  [verbMode]: [...currentList, id],
+                };
+              })
             }
           />
 
@@ -355,6 +438,7 @@ export default function App() {
               <h1>Animales</h1>
             </div>
             <button
+              type="button"
               onClick={() => {
                 setApprovedAnimalIds([]);
                 localStorage.removeItem(ANIMALS_STORAGE_KEY);
@@ -470,6 +554,7 @@ export default function App() {
             <h1>Familia</h1>
           </div>
           <button
+            type="button"
             onClick={() => {
               setApprovedFamilyIds([]);
               localStorage.removeItem(FAMILY_STORAGE_KEY);
